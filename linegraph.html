@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>D3: Setting path fills</title>
+		<script type="text/javascript" src="libraries/d3.js"></script>
+		<style type="text/css">
+        .axis text {
+            font-family: sans-serif;
+            font-size: 6px;
+        }
+		</style>
+	</head>
+	<body>
+		<h1>Test Test Test</h1>
+		<p>lorem ipsum dolor sit amet etc etc etc </p>
+		<div id="chart"</div>
+		<script type="text/javascript">
+
+        margin = {top: 20, right: 20, bottom: 30, left: 30},
+        width = 970 - margin.left - margin.right,
+        height = 350 - margin.top - margin.bottom;
+
+        //TODO: buttons for 'before 2000', 'after 2000', and all, transition the scale
+
+        all_data = d3.json("all_dicts.json", function(data){
+        	return data;
+        });
+
+        all_data.then(function(d) {
+
+            var yearcount = d.year_dicts;
+            delete yearcount['1958']
+
+            var graph_max = d3.max(Object.keys(yearcount), function(d) {return yearcount[d].playcount});
+
+            var svg = d3.select("#chart")
+                        .append("svg");
+
+            var chart = svg.attr("width", width + margin.left + margin.right)
+                           .attr("height", height + margin.top + margin.bottom)
+                           .append("g")
+                           .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            var x = d3.scaleBand()
+                      .domain(Object.keys(yearcount))
+                      .range([0, width])
+                      .padding(0.1);
+            var y = d3.scaleLinear()
+                    .domain([0, graph_max])
+                    .range([height, 0]);
+
+            var xAxis = d3.axisBottom()
+                          .scale(x);
+            var yAxis = d3.axisLeft()
+                          .scale(y);
+
+            var line = d3.line()
+                         .x(function(d) { return x(d); })
+                         //.y0(function(d) { return height2 })
+                         .y(function(d) { return y(yearcount[d].playcount); })
+                         
+
+            chart.append("path")
+                          .datum(Object.keys(yearcount))
+                          .attr("class", "line")
+                          .attr("d", line)
+                          .attr("fill", "none")
+                          .attr("stroke", "black")
+                          .attr("stroke-width", "1")
+
+            chart.append("g")
+                 .attr("class", "x axis")
+                 .attr("transform", "translate(0," + height + ")")
+                 .call(xAxis);
+            chart.append("g")
+                 .attr("class", "y axis")
+                 .call(yAxis);
+
+        });
+			
+		</script>
+	</body>
+</html>

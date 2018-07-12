@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>D3: Setting path fills</title>
+		<script type="text/javascript" src="libraries/d3.js"></script>
+		<style type="text/css">
+
+        #chart text {
+            font-family:sans-serif;
+            font-size:8px;
+        }
+
+		.axis path,
+		.axis line {
+		    fill: none;
+		    stroke: black;
+		    shape-rendering: crispEdges;
+		}
+
+		.axis text {
+		    font-family: sans-serif;
+		    font-size: 6px;
+		}
+
+		</style>
+	</head>
+	<body>
+		<h1>Test Test Test</h1>
+		<p>lorem ipsum dolor sit amet etc etc etc </p>
+		<div id="chart"</div>
+		<script type="text/javascript">
+
+        margin = {top: 20, right: 20, bottom: 30, left: 30},
+        width1 = 970 - margin.left - margin.right,
+        height1 = 970 - margin.top - margin.bottom;
+        padding1 = 20
+
+        all_data = d3.json("all_dicts.json", function(data){
+            return data;
+        });
+
+        all_data.then(function(d) {
+            var album_dict = d.album_dicts;
+
+            //delete anything without an album name
+            for(var element of Object.keys(album_dict)){
+              if(element.split("~")[0] == '' || element.split("~")[1] == '1958'){
+                  delete album_dict[element];
+              }}
+
+            var svg = d3.select("#chart").append("svg");
+            var chart = svg.attr("width", width1 + margin.left + margin.right)
+                           .attr("height", height1 + margin.top + margin.bottom)
+                           .append("g")
+                           .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            var x_max = d3.max(Object.keys(album_dict), function(d) {return album_dict[d].playcount});
+            var y_max = d3.max(Object.keys(album_dict), function(d) {return album_dict[d].skipcount});
+
+            var x = d3.scaleLinear()
+                      .domain([0, x_max+100]) //scale of the chart
+                      .range([0, width1]); //scale of the canvas
+            var y = d3.scaleLinear()
+                    .domain([0, y_max])
+                    .range([height1, 0]);
+
+            var xAxis = d3.axisBottom(x);
+            var yAxis = d3.axisLeft(y);
+
+
+            //TODO: keep labels constant for any high-count albums? text highlights when button?
+            //TODO: fix like, all of this
+            
+            var dots = chart.selectAll("circle")
+                             .data(Object.keys(album_dict))
+                             .enter()
+                             .append("circle")
+                             .attr("cx", function(d) { return x(album_dict[d].playcount); })
+                             .attr("cy", function(d) { return y(album_dict[d].skipcount); })
+                             .attr("class", function(d) { return d.split("~")[1] })
+                             .attr("r", 4)
+                             .on('mouseover', function(d) {
+                                var xpos = parseFloat(d3.select(this).attr("cx")) + 7
+                                var ypos = parseFloat(d3.select(this).attr("cy")) + 2
+                                chart.append("text")
+                                .attr("id", "tooltip")
+                                .attr("class", "counts")
+                                .attr("x", xpos)
+                                .attr("y", ypos)
+                                .text(d.split("~")[0] + " (" + d.split("~")[1] + ")")
+                                })
+                                .on('mouseout', function(d) {
+                                d3.select("#tooltip").remove();
+                                });
+
+            chart.append("g")
+                 .attr("class", "x axis")
+                 .attr("transform", "translate(0," + height1 + ")")
+                 .call(xAxis);
+            chart.append("g")
+                 .attr("class", "y axis")
+                 .call(yAxis);
+
+            // TODO: draw a line to show a 1:1
+            var line = chart.selectAll("line")
+                            .append("line");
+
+            var years = d.year_dicts;
+            delete years['1958']
+
+            var legendWidth = 100
+            var legendHeight = function(d) {
+                return 20 + (Object.keys(years).length * 15)
+            }
+
+            chart.append("rect")
+                 .attr("class", "legend")
+                 .attr("x", width1 - legendWidth - 50)
+                 .attr("y", 10)
+                 .attr("height", legendHeight)
+                 .attr("width", legendWidth)
+                 .attr("fill", "red")
+
+            chart.selectAll("year")
+                 .data(Object.keys(years))
+                 .enter()
+                 .append("rect")
+                 .attr("class", function(d) { return d })
+                 .attr("x", width1 - legendWidth - 25)
+                 .attr("y", function(d, i) { return 20 + (i * 15) })
+                 .attr("height", 10)
+                 .attr("width", 10)
+                 .attr("fill", "white")
+                 //trying to select all circles with class that matches the year clicked and change the color
+                 .on("click", function(){
+                    var year_clicked = d3.select(this).attr("class")
+                    var dots_year = dots.filter(function(d){
+                        return d.split("~")[1] == year_clicked;
+                    })
+                    .attr("fill", "red");
+                    dots_year.each(function(d) {
+                        var xpos = parseFloat(d3.select(this).attr("cx")) + 7
+                        var ypos = parseFloat(d3.select(this).attr("cy")) + 2
+                        chart.append("text")
+                        .attr("id", "tooltip")
+                        .attr("class", "counts")
+                        .attr("x", xpos)
+                        .attr("y", ypos)
+                        .text(d.split("~")[0] + " (" + d.split("~")[1] + ")")
+                    })
+                 })
+
+            chart.selectAll("label")
+                 .data(Object.keys(years))
+                 .enter()
+                 .append("text")
+                 .attr("x", width1 - legendWidth - 10)
+                 .attr("y", function(d, i) { return 20 + (i * 15) + 8 })
+                 .attr("fill", "white")
+                 .text(function(d) { return d });
+
+
+        });
+			
+		</script>
+	</body>
+</html>

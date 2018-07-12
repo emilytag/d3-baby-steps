@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>D3: Setting path fills</title>
+		<script type="text/javascript" src="libraries/d3.js"></script>
+		<style type="text/css">
+		div.bar {
+		    display: inline-block;
+		}
+		.axis path,
+		.axis line {
+		    fill: none;
+		    stroke: black;
+		    shape-rendering: crispEdges;
+		}
+
+		.axis text {
+		    font-family: sans-serif;
+		    font-size: 6px;
+		}
+
+		rect {
+			fill: blue;
+		}
+
+		rect:hover{
+			fill: green;
+		}
+		.counts {
+		   font-family:sans-serif;
+		   font-size:8px;
+		   fill: red;
+		}
+		</style>
+	</head>
+	<body>
+		<h1>Test Test Test</h1>
+		<p>lorem ipsum dolor sit amet etc etc etc </p>
+		<div id="chart"</div>
+		<script type="text/javascript">
+
+        margin = {top: 20, right: 20, bottom: 30, left: 30},
+        width = 970 - margin.left - margin.right,
+        height = 350 - margin.top - margin.bottom;
+        padding = 1
+
+
+        all_data = d3.json("all_dicts.json", function(data){
+        	return data;
+        });
+
+        all_data.then(function(d) {
+
+        var yearcount = d.year_dicts;
+        delete yearcount['1958']
+
+        //find max for axis
+        var graph_max = d3.max(Object.keys(yearcount), function(d) {return yearcount[d].album_count});
+
+        var svg = d3.select("#chart")
+        			.append("svg");
+
+        //x axis is years, y axis is album count
+        var x = d3.scaleBand()
+        		  .domain(Object.keys(yearcount))
+         		  .range([0, width])
+         		  .padding(0.1);
+        var y = d3.scaleLinear()
+                .domain([0, graph_max])
+         		.range([height, 0]);
+
+        var xAxis = d3.axisBottom()
+                      .scale(x);
+        var yAxis = d3.axisLeft()
+                      .scale(y);
+
+        var chart = svg.attr("width", width + margin.left + margin.right)
+        			   .attr("height", height + margin.top + margin.bottom)
+        			   .append("g")
+        			   .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        var bar = chart.selectAll("bar")
+                       .data(Object.keys(yearcount))
+                       .enter()
+                       .append("rect")
+                       .attr("class", "bar")
+                       .attr("x", function(d) { return x(d); })
+                       .attr("y", function(d) { return y(yearcount[d].album_count); })
+                       .attr("height", function(d) { return height - y(yearcount[d].album_count); })
+                       .attr("width", x.bandwidth())
+                       .on('mouseover', function(d) {
+                	   	var xpos = parseFloat(d3.select(this).attr("x")) + x.bandwidth() / 2
+                	   	var ypos = parseFloat(d3.select(this).attr("y")) - 2
+                	   	chart.append("text")
+                	   		 .attr("id", "tooltip")
+                	   		 .attr("class", "counts")
+                	   		 .attr("x", xpos)
+                	   		 .attr("y", ypos)
+                	   		 .attr("text-anchor", "middle")
+                	   		 .text(yearcount[d].album_count)
+            		   })
+            		   .on('mouseout', function(d) {
+                		d3.select("#tooltip").remove();
+           			   });
+
+        chart.append("g")
+             .attr("class", "x axis")
+             .attr("transform", "translate(0," + height + ")")
+             .call(xAxis);
+             
+        //chart.append("g")
+        //     .attr("class", "y axis")
+        //     .call(yAxis);
+
+        });
+			
+		</script>
+	</body>
+</html>
